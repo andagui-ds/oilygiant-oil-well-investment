@@ -1,0 +1,26 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "OilyGiant — Prospección de Pozos Petroleros"
+  description: "Modelo de regresión y simulación de riesgo para decidir la mejor región de inversión."
+  repo-url: https://github.com/andagui-ds/oilygiant-oil-well-investment
+  repo-actions: [edit, issue]
+  
+  page-footer:
+    left: |
+      © 2025 **Andrés Aguirre** · [Volver al portafolio](https://andagui-ds.github.io/portfolio/)
+    right: |
+      [GitHub](https://github.com/andagui-ds/oilygiant-oil-well-investment)
+
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "🔍 Ver código Python"
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    back-to-top-navigation: true

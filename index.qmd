@@ -1,0 +1,72 @@
+---
+title: "OilyGiant: Prospección de Pozos Petroleros"
+subtitle: "Regresión y análisis de riesgo para una inversión de $100 millones"
+format:
+  html:
+    page-layout: article
+---
+
+## 🎯 El Problema de Negocio
+
+OilyGiant debe decidir en cuál de tres regiones geológicas construir 200 nuevos pozos petroleros. El presupuesto es de **$100 millones de USD** ($500,000 por pozo) y solo se pueden explorar 500 puntos por región.
+
+El objetivo no es solo encontrar la región con mayor volumen de reservas, sino **maximizar el beneficio y minimizar el riesgo de pérdidas**, con un umbral estricto: el riesgo de pérdida no debe superar el **2.5%**.
+
+## 📊 Los Datos
+
+- **Fuentes:** `geo_data_0.csv`, `geo_data_1.csv`, `geo_data_2.csv`.
+- **Características:** 3 variables geológicas (f0, f1, f2) por cada punto de exploración.
+- **Variable objetivo:** `product` (volumen de reservas en miles de barriles).
+- **Punto de equilibrio (Break-even):** 111.11 miles de barriles por pozo.
+
+## 🧠 Enfoque y Metodología
+
+1. **Modelado Base:** Regresión Lineal para predecir el volumen de reservas en cada región (75% train / 25% validación).
+2. **Cálculo de Rentabilidad Potencial:** Selección de los 200 mejores pozos predichos para estimar el beneficio teórico.
+3. **Simulación de Riesgo (Bootstrapping):**
+   - **1,000 iteraciones**.
+   - En cada iteración, se muestrearon 500 pozos (simulando la exploración real) y se seleccionaron los mejores 200.
+   - Se calculó la distribución de beneficios, el **Intervalo de Confianza (IC) del 95%** y el **Riesgo de Pérdida**.
+
+## 🏆 Resultados de la Simulación
+
+| Región | RMSE | Beneficio Promedio (USD) | Intervalo de Confianza (95%) | Riesgo de Pérdida |
+| :--- | ---: | ---: | :--- | ---: |
+| **Región 1** 🏆 | **0.89** | **$4,985,690** | $753,155 a $9,115,036 | **1.0%** (Viable) |
+| Región 0 | 37.76 | $4,359,337 | -$1,162,316 a $9,665,041 | 6.1% (Inviable) |
+| Región 2 | 40.15 | $4,126,728 | -$1,589,395 a $9,781,912 | 7.0% (Inviable) |
+
+## ✅ Recomendación de Negocio
+
+**Se debe invertir en la Región 1.**
+Aunque las Regiones 0 y 2 tienen volúmenes medios ligeramente superiores, su altísima varianza (RMSE) provoca que el riesgo de pérdida supere el 2.5%. La Región 1 tiene un RMSE de **0.89**, lo que permite una selección quirúrgica de pozos, garantizando un **riesgo de pérdida de apenas 1.0%** y un beneficio esperado cercano a los **$5 millones**.
+
+## 🛠️ Stack Técnico
+
+::: {.grid}
+::: {.g-col-6 .g-col-md-3}
+**Lenguajes**
+
+Python
+:::
+::: {.g-col-6 .g-col-md-3}
+**Análisis**
+
+Pandas · NumPy
+:::
+::: {.g-col-6 .g-col-md-3}
+**ML**
+
+Scikit-learn (Regresión Lineal)
+:::
+::: {.g-col-6 .g-col-md-3}
+**Técnicas**
+
+Bootstrapping · Intervalos de Confianza
+:::
+:::
+
+## 🔗 Recursos
+
+- 📓 [Notebook completo](notebooks/analisis-oilygiant.ipynb){target="_blank"}
+- 💻 [Repositorio en GitHub](https://github.com/andagui-ds/oilygiant-oil-well-investment){target="_blank"}
