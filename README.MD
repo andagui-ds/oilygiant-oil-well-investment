@@ -1,3 +1,10 @@
+---
+title: "OilyGiant: Selección de Ubicación para Pozos Petroleros"
+subtitle: "Regresión Lineal y Simulación Bootstrapping para Evaluación de Riesgos"
+description: "Modelado predictivo y simulación de 1,000 muestras con bootstrapping para calcular el beneficio promedio y evaluar la probabilidad de pérdidas (< 2.5%)."
+categories: [Machine Learning, Regresión Lineal, Bootstrapping, Análisis Financiero]
+---
+
 # 🏗️ ¿Dónde perforar? Decisión de inversión de $100M con Machine Learning
 
 **Problema de negocio:** OilyGiant debía elegir entre 3 regiones para perforar 200 pozos petrolíferos con un presupuesto de **$100 millones**. La decisión implicaba analizar el volumen esperado de reservas y, sobre todo, el **riesgo de pérdida** en cada región.
