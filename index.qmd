@@ -68,5 +68,5 @@ Bootstrapping · Intervalos de Confianza
 
 ## 🔗 Recursos
 
-- 📓 [Notebook completo](notebooks/analisis-oilygiant.ipynb){target="_blank"}
+- 📓 [Notebook completo en GitHub](https://github.com/andagui-ds/oilygiant-oil-well-investment/blob/main/notebooks/analisis-oilygiant.ipynb){target="_blank"}
 - 💻 [Repositorio en GitHub](https://github.com/andagui-ds/oilygiant-oil-well-investment){target="_blank"}
