@@ -1,50 +1,51 @@
----
-title: "OilyGiant: Selección de Ubicación para Pozos Petroleros"
-subtitle: "Regresión Lineal y Simulación Bootstrapping para Evaluación de Riesgos"
-description: "Modelado predictivo y simulación de 1,000 muestras con bootstrapping para calcular el beneficio promedio y evaluar la probabilidad de pérdidas (< 2.5%)."
-categories: [Machine Learning, Regresión Lineal, Bootstrapping, Análisis Financiero]
----
+# ⛽ OilyGiant — Prospección de Pozos Petroleros y Análisis de Riesgo
 
-# 🏗️ ¿Dónde perforar? Decisión de inversión de $100M con Machine Learning
+> Modelo de regresión lineal y simulaciones de Monte Carlo (Bootstrapping) para determinar la región con mayor rentabilidad y menor riesgo financiero para la perforación de 200 nuevos pozos petroleros.
 
-**Problema de negocio:** OilyGiant debía elegir entre 3 regiones para perforar 200 pozos petrolíferos con un presupuesto de **$100 millones**. La decisión implicaba analizar el volumen esperado de reservas y, sobre todo, el **riesgo de pérdida** en cada región.
+## 🎯 Problema de Negocio
 
-**Objetivo:** seleccionar la región con mayor beneficio esperado manteniendo un **riesgo de pérdida inferior al 2.5%**.
+**OilyGiant** necesita decidir en cuál de tres regiones geológicas debe construir 200 nuevos pozos de petróleo. 
+El presupuesto de inversión es de **$100 millones de USD** (es decir, $500,000 por pozo). Solo se pueden explorar 500 puntos por región para elegir los mejores 200.
 
----
+El objetivo no es solo encontrar la región con mayor volumen de reservas, sino **maximizar el beneficio y minimizar el riesgo de pérdidas**, estableciendo un umbral estricto: el riesgo de pérdida no debe superar el **2.5%**.
 
-## 📊 Resultado principal
+## 📊 Datos
 
-| Región | Beneficio esperado | IC 95% (inferior) | IC 95% (superior) | Riesgo de pérdida | ¿Viable? |
-|---|---|---|---|---|---|
-| Región 0 | $4.28M | -$0.97M | $9.54M | 5.5% | ❌ |
-| **Región 1** | **$5.12M** | **$0.92M** | **$9.21M** | **0.6%** | ✅ |
-| Región 2 | $4.09M | -$1.21M | $9.61M | 7.5% | ❌ |
+- **Fuentes:** `geo_data_0.csv`, `geo_data_1.csv`, `geo_data_2.csv`
+- **Características:** 3 variables geológicas (f0, f1, f2) por cada punto de exploración.
+- **Variable objetivo:** `product` (volumen de reservas en miles de barriles).
+- **Punto de equilibrio (Break-even):** 111.11 miles de barriles por pozo (inversión de $500k / $4,500 por unidad).
 
-> **Recomendación:** perforar en la **Región 1**. Es la única que cumple con todos los criterios: beneficio esperado alto, IC 95% completamente positivo y riesgo de pérdida muy por debajo del umbral del 2.5%.
+## 🧠 Enfoque y Metodología
 
----
+1. **Modelado Base:** Entrenamiento de un modelo de **Regresión Lineal** para predecir el volumen de reservas en cada región (división 75% train / 25% validación).
+2. **Cálculo de Rentabilidad Potencial:** Selección de los 200 mejores pozos predichos en cada región para estimar el beneficio teórico.
+3. **Simulación de Riesgo (Bootstrapping):**
+   - Se realizaron **1,000 iteraciones**.
+   - En cada iteración, se muestrearon aleatoriamente 500 pozos (simulando la exploración real) y se seleccionaron los mejores 200 según las predicciones.
+   - Se calculó la distribución de beneficios, el beneficio promedio, el **Intervalo de Confianza (IC) del 95%** y el **Riesgo de Pérdida** (probabilidad de beneficio negativo).
 
-## 🛠️ Metodología
+## 🏆 Resultados de la Simulación
 
-1. **Exploración de datos:** 3 datasets geológicos independientes (uno por región) con ~10,000 registros cada uno.
-2. **Modelado:** regresión lineal para predecir el volumen de reservas de cada pozo (requisito del negocio por interpretabilidad).
-3. **Selección:** de los 500 pozos explorados, elegir los 200 con mayor predicción de reservas.
-4. **Evaluación de riesgo:** 1,000 simulaciones de **bootstrapping** (muestreo con reemplazo de 500 pozos) para estimar la distribución de beneficios, el IC 95% y la probabilidad de pérdida.
-5. **Punto de equilibrio:** 111.11 miles de barriles por pozo (ingreso de $4,500 por unidad vs. costo de $500,000 por pozo).
+| Región | RMSE | Beneficio Promedio (USD) | Intervalo de Confianza (95%) | Riesgo de Pérdida |
+| :--- | ---: | ---: | :--- | ---: |
+| **Región 1** 🏆 | **0.89** | **$4,985,690** | $753,155 a $9,115,036 | **1.0%** (Viable) |
+| Región 0 | 37.76 | $4,359,337 | -$1,162,316 a $9,665,041 | 6.1% (Inviable) |
+| Región 2 | 40.15 | $4,126,728 | -$1,589,395 a $9,781,912 | 7.0% (Inviable) |
 
----
+*(Nota: Las regiones 0 y 2 tienen un riesgo de pérdida mayor al 2.5% permitido, con intervalos de confianza que descienden a números negativos).*
 
-## 📁 Contenido del repositorio
+## ✅ Recomendación Final
 
-- `notebooks/01-analisis-principal.ipynb`: análisis completo (EDA, modelado, bootstrapping y visualizaciones).
-- `requirements.txt`: dependencias para reproducir el análisis.
-- `images/`: gráficos exportados para el README.
+**Se debe invertir en la Región 1.**
+Aunque la Región 0 y 2 tienen volúmenes medios predichos ligeramente superiores, su altísima varianza (RMSE) provoca que el riesgo de pérdida supere el umbral del 2.5%. 
 
----
+La Región 1 tiene un RMSE sorprendentemente bajo (0.89), lo que indica una correlación casi perfecta entre las características y las reservas. Esto permite una precisión quirúrgica al seleccionar los pozos, garantizando un **riesgo de pérdida de apenas 1.0%** y un beneficio promedio esperado cercano a los **$5 millones de USD**.
 
-## ▶️ Cómo ejecutar
+## 🛠️ Stack Técnico
+- **Lenguajes:** Python
+- **Librerías:** Pandas, Scikit-learn, NumPy, Math
+- **Técnicas:** Regresión Lineal, Bootstrapping, Intervalos de Confianza, Evaluación de Riesgo, Toma de decisiones bajo incertidumbre.
 
-```bash
-pip install -r requirements.txt
-jupyter notebook notebooks/01-analisis-principal.ipynb
+## 🔗 Ver el Análisis Completo
+- 📓 [Notebook original con todo el código y las simulaciones](notebooks/analisis-oilygiant.ipynb)
