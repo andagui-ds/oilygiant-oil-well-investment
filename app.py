@@ -143,4 +143,3 @@ fig.add_vline(
     annotation_text="Break-Even ($0)",
 )
 st.plotly_chart(fig, use_container_width=True)
-  st.plotly_chart(fig, use_container_width=True)
