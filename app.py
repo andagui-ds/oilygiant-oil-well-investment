@@ -2,37 +2,38 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import root_mean_squared_error
 from sklearn.model_selection import train_test_split
 import streamlit as st
 
-st.set_page_config(page_title="OilyGiant - Análisis de Riesgo", layout="wide")
+st.set_page_config(page_title="OilyGiant - Risk & Profit Analysis", layout="wide")
 
-st.title("🛢️ OilyGiant - Análisis de Riesgo y Rentabilidad")
+st.title("🛢️ OilyGiant - Oil Well Investment & Risk Analysis")
 st.markdown(
-    "Esta herramienta entrena un modelo de **Regresión Lineal** sobre los"
-    " estudios geológicos reales y ejecuta **1,000 simulaciones de"
-    " Bootstrapping** (seleccionando los **200 mejores pozos** de una muestra"
-    " de 500)."
+    "This app trains a **Linear Regression** model on real geological survey"
+    " data and runs **1,000 Bootstrapping simulations** (selecting the **top"
+    " 200 wells** out of 500 sampled points) to evaluate profitability and"
+    " risk."
 )
 
 
-# 1. Cargar los datasets reales desde la raíz del repositorio
+# 1. Load geological datasets from the root directory
 @st.cache_data
-def cargar_datos():
-  archivos = {
-      "Región 0": "geo_data_0.csv",
-      "Región 1": "geo_data_1.csv",
-      "Región 2": "geo_data_2.csv",
+def load_data():
+  files = {
+      "Region 0": "geo_data_0.csv",
+      "Region 1": "geo_data_1.csv",
+      "Region 2": "geo_data_2.csv",
   }
-  return {nombre: pd.read_csv(ruta) for nombre, ruta in archivos.items()}
+  return {name: pd.read_csv(path) for name, path in files.items()}
 
 
-datos_regiones = cargar_datos()
+regions_data = load_data()
 
 
-# 2. Entrenar modelo y ejecutar Bootstrapping real (cacheado por región y presupuesto)
+# 2. Train model, compute RMSE, and run Bootstrapping simulation
 @st.cache_data
-def ejecutar_analisis(df, presupuesto_usd, n_simulaciones=1000):
+def run_simulation(df, budget_usd, n_simulations=1000):
   X = df[["f0", "f1", "f2"]]
   y = df["product"]
 
@@ -42,71 +43,104 @@ def ejecutar_analisis(df, presupuesto_usd, n_simulaciones=1000):
 
   model = LinearRegression()
   model.fit(X_train, y_train)
-  predicciones = pd.Series(model.predict(X_valid), index=y_valid.index)
+  predictions = pd.Series(model.predict(X_valid), index=y_valid.index)
 
-  # Parámetros financieros del proyecto OilyGiant
-  ingreso_por_unidad = 4500  # 4,500 USD por cada mil barriles
+  rmse = root_mean_squared_error(y_valid, predictions)
+
+  revenue_per_unit = 4500  # $4,500 USD per thousand barrels
   state = np.random.RandomState(12345)
-  ganancias = []
+  profits = []
 
-  for _ in range(n_simulaciones):
-    muestra_target = y_valid.sample(n=500, replace=True, random_state=state)
-    muestra_preds = predicciones[muestra_target.index]
+  for _ in range(n_simulations):
+    target_sample = y_valid.sample(n=500, replace=True, random_state=state)
+    preds_sample = predictions[target_sample.index]
 
-    # Seleccionar los 200 mejores pozos según la predicción del modelo
-    mejores_200 = muestra_target[
-        muestra_preds.sort_values(ascending=False).index
-    ][:200]
-    ganancia = (mejores_200.sum() * ingreso_por_unidad) - presupuesto_usd
-    ganancias.append(ganancia)
+    # Select top 200 wells based on model predictions
+    top_200 = target_sample[preds_sample.sort_values(ascending=False).index][
+        :200
+    ]
+    profit = (top_200.sum() * revenue_per_unit) - budget_usd
+    profits.append(profit)
 
-  return np.array(ganancias)
+  return rmse, np.array(profits)
 
 
-# Barra lateral con parámetros interactivos
-st.sidebar.header("Parámetros del Proyecto")
-region = st.sidebar.selectbox(
-    "Selecciona la Región", ["Región 0", "Región 1", "Región 2"]
+# Sidebar controls
+st.sidebar.header("Project Parameters")
+selected_region = st.sidebar.selectbox(
+    "Select Region", ["Region 1", "Region 0", "Region 2"]
 )
-presupuesto = st.sidebar.number_input(
-    "Presupuesto (USD)",
+budget = st.sidebar.number_input(
+    "Budget (USD)",
     min_value=10_000_000,
     max_value=500_000_000,
     value=100_000_000,
     step=5_000_000,
 )
 
-if st.sidebar.button("Evaluar Riesgo"):
-  df_seleccionado = datos_regiones[region]
-  ganancias = ejecutar_analisis(df_seleccionado, presupuesto)
+# Compute summary table for all 3 regions (matching the notebook table)
+summary_rows = []
+all_results = {}
 
-  ganancia_media = ganancias.mean()
-  riesgo_perdida = (ganancias < 0).mean() * 100
-  ic_inf = np.percentile(ganancias, 2.5)
-  ic_sup = np.percentile(ganancias, 97.5)
+for reg_name in ["Region 1", "Region 0", "Region 2"]:
+  rmse_val, profits_arr = run_simulation(regions_data[reg_name], budget)
+  all_results[reg_name] = (rmse_val, profits_arr)
 
-  st.subheader(f"Resultados Reales para {region}")
+  avg_p = profits_arr.mean()
+  ci_l = np.percentile(profits_arr, 2.5)
+  ci_u = np.percentile(profits_arr, 97.5)
+  risk_p = (profits_arr < 0).mean() * 100
+  status = "Viable" if risk_p < 2.5 else "Unfeasible"
+  label = f"{reg_name} 🏆" if reg_name == "Region 1" and risk_p < 2.5 else reg_name
 
-  col1, col2, col3 = st.columns(3)
-  col1.metric("Ganancia Promedio", f"${ganancia_media:,.0f}")
-  col2.metric(
-      "Riesgo de Pérdida",
-      f"{riesgo_perdida:.1f}%",
-      delta="Apto (< 2.5%)" if riesgo_perdida < 2.5 else "Riesgo Alto (≥ 2.5%)",
-      delta_color="normal" if riesgo_perdida < 2.5 else "inverse",
-  )
-  col3.metric("Intervalo de Confianza (95%)", f"${ic_inf:,.0f} a ${ic_sup:,.0f}")
+  summary_rows.append({
+      "Region": label,
+      "RMSE": round(rmse_val, 2),
+      "Average Profit (USD)": f"${avg_p:,.0f}",
+      "Confidence Interval (95%)": f"${ci_l:,.0f} to ${ci_u:,.0f}",
+      "Risk of Loss": f"{risk_p:.1f}% ({status})",
+  })
 
-  fig = px.histogram(
-      ganancias,
-      nbins=50,
-      title=(
-          f"Distribución Real de Ganancias - {region} (1,000 Simulaciones)"
-      ),
-      labels={"value": "Ganancia Neta (USD)", "count": "Frecuencia"},
-  )
-  fig.update_layout(showlegend=False)
-  fig.add_vline(
-      x=0, line_dash="dash", line_color="red", annotation_text="Punto de Equilibrio ($0)"
-  )
+st.subheader("🏆 Simulation Results (All Regions)")
+st.dataframe(
+    pd.DataFrame(summary_rows), use_container_width=True, hide_index=True
+)
+
+st.divider()
+
+# Detailed interactive view for the selected region
+rmse_sel, profits_sel = all_results[selected_region]
+avg_profit = profits_sel.mean()
+risk_of_loss = (profits_sel < 0).mean() * 100
+ci_low = np.percentile(profits_sel, 2.5)
+ci_high = np.percentile(profits_sel, 97.5)
+is_viable = risk_of_loss < 2.5
+
+st.subheader(f"Detailed Breakdown — {selected_region}")
+
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("RMSE", f"{rmse_sel:.2f}")
+col2.metric("Average Profit (USD)", f"${avg_profit:,.0f}")
+col3.metric("Confidence Interval (95%)", f"${ci_low:,.0f} to ${ci_high:,.0f}")
+col4.metric(
+    "Risk of Loss",
+    f"{risk_of_loss:.1f}%",
+    delta="Viable (< 2.5%)" if is_viable else "Unfeasible (≥ 2.5%)",
+    delta_color="normal" if is_viable else "inverse",
+)
+
+fig = px.histogram(
+    profits_sel,
+    nbins=50,
+    title=f"Profit Distribution — {selected_region} (1,000 Simulations)",
+    labels={"value": "Net Profit (USD)", "count": "Frequency"},
+)
+fig.update_layout(showlegend=False)
+fig.add_vline(
+    x=0,
+    line_dash="dash",
+    line_color="red",
+    annotation_text="Break-Even ($0)",
+)
+st.plotly_chart(fig, use_container_width=True)
   st.plotly_chart(fig, use_container_width=True)
